@@ -10,7 +10,6 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from webdriver_manager.chrome import ChromeDriverManager  # Auto-installs ChromeDriver
 import fitz  # PyMuPDF, used for working with PDF files
 import validators  # external Validators
-from bs4 import BeautifulSoup
 
 
 # Reads and returns the content of a file at the specified path
@@ -28,8 +27,7 @@ def check_file_exists(system_path: str) -> bool:
 
 # Parses the HTML and finds all links ending in .pdf
 def parse_html(html: str) -> list[str]:
-    soup = BeautifulSoup(markup=html, features="html.parser")
-    return [a['href'] for a in soup.find_all(name='a', href=True) if a['href'].endswith('.pdf')]
+    return re.findall(pattern=r'https?://[^\s"\'<>]+\.pdf', string=html, flags=re.IGNORECASE)
 
 # Removes duplicate items from a list
 def remove_duplicates_from_slice(provided_slice: list[str]) -> list[str]:
@@ -115,7 +113,7 @@ def initialize_web_driver(download_folder: str) -> webdriver.Chrome:
 def wait_for_pdf_download(
     download_folder: str, files_before_download: set[str], timeout_seconds: int = 3
 ) -> str:
-    deadline = time.time() + timeout_seconds  # Calculate timeout deadline
+    deadline: float = time.time() + timeout_seconds  # Calculate timeout deadline
     while time.time() < deadline:  # While still within the timeout period
         current_files = set(
             os.listdir(path=download_folder)
@@ -129,7 +127,6 @@ def wait_for_pdf_download(
             return os.path.join(
                 download_folder, new_pdf_files[0]
             )  # Return its full path
-        time.sleep(0.5)  # Wait half a second before retrying
     raise TimeoutError("PDF download timed out.")  # Raise error if no file appears
 
 
@@ -224,7 +221,6 @@ def main() -> None:
         )  # Remove duplicates
         ammount_of_pdf: int = len(pdf_links)  # Get count of PDFs
 
-        print(f"{ammount_of_pdf}")
 
         for pdf_link in pdf_links:  # For each PDF link
             if not validate_url(given_url=pdf_link):
@@ -250,7 +246,7 @@ def main() -> None:
             remove_system_file(system_path=pdf_file)  # Delete it
 
         if check_upper_case_letter(
-            get_filename_and_extension(pdf_file)
+            content=get_filename_and_extension(path=pdf_file)
         ):  # Check for caps
             print(pdf_file)  # Print file path
             dir_path: str = os.path.dirname(p=pdf_file)  # Get directory
