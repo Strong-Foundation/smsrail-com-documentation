@@ -15,6 +15,9 @@ jobs:
   build:
     # Display name of the job in the GitHub Actions UI
     name: Execute Python Script and Push Changes
+    # Specify the permissions required for this job
+    permissions:
+      contents: write
     # Specify the type of runner (a fresh Ubuntu VM)
     runs-on: ubuntu-latest
 
